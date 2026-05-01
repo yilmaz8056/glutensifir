@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GlutenSıfır</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons (Phosphor Icons - clean and modern) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10B981">
+</head>
+<body>
+
+    <!-- Onboarding Screen -->
+    <section id="onboarding" class="screen active">
+        <div class="onboarding-content">
+            <div class="logo">🌾 GlutenSıfır</div>
+            <h1>Hoş Geldin!</h1>
+            <p>Sana daha iyi yardımcı olabilmemiz için durumunu seç:</p>
+            
+            <div class="options">
+                <button class="btn-outline" onclick="app.finishOnboarding('colyak')">Çölyaklıyım</button>
+                <button class="btn-outline" onclick="app.finishOnboarding('hassasiyet')">Gluten Hassasiyetim Var</button>
+                <button class="btn-outline" onclick="app.finishOnboarding('saglikli')">Sağlıklı Besleniyorum</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main App Container -->
+    <main id="main-app" class="screen hidden">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-title">GlutenSıfır</div>
+            <div class="header-actions">
+                <i class="ph ph-bell"></i>
+                <i class="ph ph-user-circle"></i>
+            </div>
+        </header>
+
+        <!-- Home View -->
+        <div id="view-home" class="view active-view">
+            <div class="search-bar">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" placeholder="Ürün veya marka ara...">
+            </div>
+
+            <div class="section-title">
+                <h2>Yakındaki Güvenli Mekanlar</h2>
+                <a href="#">Tümü</a>
+            </div>
+            <div class="places-scroll">
+                <!-- Populated by JS -->
+                <div class="place-card">
+                    <div class="place-img mock-img-1"></div>
+                    <div class="place-info">
+                        <h3>Glutensiz Ada</h3>
+                        <p><i class="ph ph-star-fill"></i> 4.9 (Sertifikalı)</p>
+                    </div>
+                </div>
+                <div class="place-card">
+                    <div class="place-img mock-img-2"></div>
+                    <div class="place-info">
+                        <h3>Natur Cafe</h3>
+                        <p><i class="ph ph-star-fill"></i> 4.7 (Çapraz Bulaşma Yok)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <h2>Günün Glütensiz Tarifi</h2>
+            </div>
+            <div class="recipe-card">
+                <div class="recipe-img"></div>
+                <div class="recipe-content">
+                    <h3>Karabuğday Ekmeği</h3>
+                    <p>100% Güvenli, yumuşacık ve ev yapımı.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner View -->
+        <div id="view-scanner" class="view hidden-view">
+            <div class="camera-container" id="camera-container">
+                <div class="scanner-overlay">
+                    <div class="scan-area"></div>
+                    <p class="scan-text">Barkodu alana yerleştirin</p>
+                </div>
+                <video id="camera-stream" autoplay playsinline></video>
+            </div>
+
+            <!-- Result Overlay -->
+            <div id="scan-result" class="result-overlay hidden">
+                <div class="result-card">
+                    <div class="result-icon"></div>
+                    <h2 class="result-title">Sonuç Yükleniyor...</h2>
+                    <p class="result-desc"></p>
+                    <button class="btn-primary" onclick="app.closeScannerResult()">Tekrar Okut</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map View -->
+        <div id="view-map" class="view hidden-view">
+            <div class="map-placeholder">
+                <i class="ph ph-map-trifold"></i>
+                <p>Harita Modülü Yükleniyor...</p>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="app.navigate('home')">
+                <i class="ph ph-house"></i>
+                <span>Ana Sayfa</span>
+            </a>
+            <div class="nav-item scanner-btn-container" onclick="app.navigate('scanner')">
+                <div class="scanner-btn">
+                    <i class="ph ph-scan"></i>
+                </div>
+            </div>
+            <a href="#" class="nav-item" onclick="app.navigate('map')">
+                <i class="ph ph-map-pin"></i>
+                <span>Mekanlar</span>
+            </a>
+        </nav>
+    </main>
+
+    <script src="js/mockData.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
