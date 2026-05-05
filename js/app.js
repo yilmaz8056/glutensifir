@@ -1,9 +1,11 @@
+import dbService from './dbService.js';
+
 const app = {
     currentView: 'home',
     userProfile: null,
     mapInstance: null,
 
-    init() {
+    async init() {
         // Check if user has completed onboarding
         let profile = null;
         try {
@@ -27,14 +29,11 @@ const app = {
                 .catch(err => console.error('SW Failed', err));
         }
 
-        // Render dynamic places
-        this.renderPlaces();
+        // Try Loading Data from Firebase First
+        await this.loadDataFromFirebase();
         
         // Render Deals (FOMO)
         this.renderDeals();
-        
-        // Render dynamic recipes
-        this.renderRecipes();
         
         // Generate initial meal plan
         this.generateMealPlan();
@@ -44,6 +43,41 @@ const app = {
 
         // Update Streak UI
         this.updateStreakUI();
+    },
+
+    async loadDataFromFirebase() {
+        try {
+            console.log("🔥 Firebase verileri kontrol ediliyor...");
+            const recipes = await dbService.getRecipes();
+            if (recipes && recipes.length > 0) {
+                window.MOCK_RECIPES = recipes;
+                console.log("✅ Tarifler Firebase'den yüklendi.");
+            } else {
+                // Seed Firebase for the first time
+                console.log("ℹ️ Firebase'de tarif yok. Mock datalar yükleniyor...");
+                if(window.dbService && window.dbService.seedCollection && window.MOCK_RECIPES) {
+                    dbService.seedCollection("recipes", window.MOCK_RECIPES);
+                }
+            }
+
+            const places = await dbService.getPlaces();
+            if (places && places.length > 0) {
+                window.MOCK_PLACES = places;
+                console.log("✅ Mekanlar Firebase'den yüklendi.");
+            }
+
+            const products = await dbService.getProducts();
+            if (products && products.length > 0) {
+                window.MOCK_PRODUCTS = products;
+                console.log("✅ Ürünler Firebase'den yüklendi.");
+            }
+        } catch(e) {
+            console.warn("⚠️ Firebase bağlantı hatası veya konfigürasyon yok. Yerel mockData kullanılacak.", e);
+        }
+
+        // Render dynamic places and recipes (with either Firebase data or fallback mockData)
+        this.renderPlaces();
+        this.renderRecipes();
     },
 
     finishOnboarding(profileType) {
@@ -570,7 +604,12 @@ const app = {
     }
 };
 
+// Expose globally for HTML onclick handlers
+window.app = app;
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
+
+export default app;
