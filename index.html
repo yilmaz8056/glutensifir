@@ -11,6 +11,9 @@
     <!-- Icons (Phosphor Icons - clean and modern) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#10B981">
@@ -55,33 +58,41 @@
                 <h2>Yakındaki Güvenli Mekanlar</h2>
                 <a href="#">Tümü</a>
             </div>
-            <div class="places-scroll">
+            <div class="places-scroll" id="places-container">
                 <!-- Populated by JS -->
-                <div class="place-card">
-                    <div class="place-img mock-img-1"></div>
-                    <div class="place-info">
-                        <h3>Glutensiz Ada</h3>
-                        <p><i class="ph ph-star-fill"></i> 4.9 (Sertifikalı)</p>
-                    </div>
-                </div>
-                <div class="place-card">
-                    <div class="place-img mock-img-2"></div>
-                    <div class="place-info">
-                        <h3>Natur Cafe</h3>
-                        <p><i class="ph ph-star-fill"></i> 4.7 (Çapraz Bulaşma Yok)</p>
-                    </div>
-                </div>
             </div>
 
             <div class="section-title">
-                <h2>Günün Glütensiz Tarifi</h2>
+                <h2>Günlük Beslenme Planım</h2>
             </div>
-            <div class="recipe-card">
-                <div class="recipe-img"></div>
-                <div class="recipe-content">
-                    <h3>Karabuğday Ekmeği</h3>
-                    <p>100% Güvenli, yumuşacık ve ev yapımı.</p>
-                </div>
+            <div id="meal-plan-controls" style="text-align: center; margin-bottom: 15px;">
+                <button class="btn-primary" onclick="app.generateMealPlan()" style="padding: 10px 20px; font-size: 0.9rem;">
+                    <i class="ph ph-magic-wand"></i> Planımı Oluştur
+                </button>
+            </div>
+            <div id="daily-recipe-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Recipes View -->
+        <div id="view-recipes" class="view hidden-view" style="padding: 20px;">
+            <div class="search-bar">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" placeholder="Tarif ara...">
+            </div>
+            <div class="section-title">
+                <h2>Tüm Tarifler</h2>
+            </div>
+            <div id="recipes-list" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Recipe Detail View -->
+        <div id="view-recipe-detail" class="view hidden-view">
+            <div id="recipe-detail-content">
+                <!-- Populated by JS -->
             </div>
         </div>
 
@@ -107,10 +118,73 @@
         </div>
 
         <!-- Map View -->
-        <div id="view-map" class="view hidden-view">
-            <div class="map-placeholder">
-                <i class="ph ph-map-trifold"></i>
-                <p>Harita Modülü Yükleniyor...</p>
+        <div id="view-map" class="view hidden-view" style="padding: 0; position: relative;">
+            <div id="map-container" style="width: 100%; height: 100%;"></div>
+            
+            <button onclick="document.getElementById('add-venue-modal').classList.remove('hidden')" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 2rem; box-shadow: var(--shadow-lg); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <i class="ph ph-plus"></i>
+            </button>
+        </div>
+
+        <!-- Add Venue Modal -->
+        <div id="add-venue-modal" class="result-overlay hidden" style="z-index: 2000;">
+            <div class="result-card" style="text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 1.2rem;">Yeni Mekan Ekle</h3>
+                    <i class="ph ph-x" onclick="document.getElementById('add-venue-modal').classList.add('hidden')" style="font-size: 1.5rem; cursor: pointer;"></i>
+                </div>
+                <input type="text" id="venue-name" placeholder="Mekan Adı" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                <select id="venue-type" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <option value="100% GF">100% Glutensiz</option>
+                    <option value="Seçenek Sunar">Glutensiz Seçenek Sunar</option>
+                    <option value="Kafe & Fırın">Kafe / Fırın</option>
+                </select>
+                <button class="btn-primary" onclick="app.addVenue()">Mekanı Öner (+20 Puan)</button>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="view-profile" class="view hidden-view" style="padding: 20px;">
+            <div class="section-title">
+                <h2>Profilim & Başarılar</h2>
+            </div>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: var(--radius-md); text-align: center; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                <div style="width: 80px; height: 80px; background: var(--primary-light); border-radius: 50%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--primary-dark);">
+                    <i class="ph ph-user"></i>
+                </div>
+                <h3 style="margin-bottom: 5px;">Süper Çölyaklı</h3>
+                <p style="color: var(--text-muted);">Toplam Puan: <strong style="color: var(--primary);">125</strong></p>
+            </div>
+            
+            <div class="section-title">
+                <h3>Kazanılan Rozetler</h3>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: var(--card-bg); padding: 15px; border-radius: var(--radius-md); text-align: center; box-shadow: var(--shadow-sm); border: 2px solid var(--primary);">
+                    <i class="ph ph-medal" style="font-size: 2rem; color: var(--warning); margin-bottom: 5px;"></i>
+                    <p style="font-weight: bold; font-size: 0.9rem;">Mekan Dedektifi</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">5 Mekan Değerlendirdin</p>
+                </div>
+                <div style="background: var(--card-bg); padding: 15px; border-radius: var(--radius-md); text-align: center; box-shadow: var(--shadow-sm);">
+                    <i class="ph ph-scan" style="font-size: 2rem; color: var(--primary); margin-bottom: 5px;"></i>
+                    <p style="font-weight: bold; font-size: 0.9rem;">Bilinçli Tüketici</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">10 Barkod Okuttun</p>
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 30px;">
+                <h3>Semptom ve Sağlık Günlüğü</h3>
+            </div>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px; text-align: center;">Diyetini ve vücudunun tepkilerini takip et.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 15px;">
+                    <button onclick="app.saveSymptomLog('Harika', 'var(--primary)')" style="flex: 1; padding: 10px; background: var(--primary-light); color: var(--primary-dark); border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: bold;"><i class="ph ph-smiley" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> Harika</button>
+                    <button onclick="app.saveSymptomLog('Şişkinlik', 'var(--warning)')" style="flex: 1; padding: 10px; background: #FEF3C7; color: #B45309; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: bold;"><i class="ph ph-smiley-meh" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> Şişkinlik</button>
+                    <button onclick="app.saveSymptomLog('Kaçak', 'var(--danger)')" style="flex: 1; padding: 10px; background: #FEE2E2; color: #B91C1C; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: bold;"><i class="ph ph-smiley-sad" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> Gluten Kaçağı</button>
+                </div>
+                <div id="symptom-logs" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Logs will appear here -->
+                </div>
             </div>
         </div>
 
@@ -119,6 +193,10 @@
             <a href="#" class="nav-item active" onclick="app.navigate('home')">
                 <i class="ph ph-house"></i>
                 <span>Ana Sayfa</span>
+            </a>
+            <a href="#" class="nav-item" onclick="app.navigate('recipes')">
+                <i class="ph ph-book-open"></i>
+                <span>Tarifler</span>
             </a>
             <div class="nav-item scanner-btn-container" onclick="app.navigate('scanner')">
                 <div class="scanner-btn">
@@ -129,9 +207,15 @@
                 <i class="ph ph-map-pin"></i>
                 <span>Mekanlar</span>
             </a>
+            <a href="#" class="nav-item" onclick="app.navigate('profile')">
+                <i class="ph ph-user"></i>
+                <span>Profil</span>
+            </a>
         </nav>
     </main>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/mockData.js"></script>
     <script src="js/scanner.js"></script>
     <script src="js/app.js"></script>

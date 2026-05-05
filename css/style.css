@@ -254,6 +254,26 @@ body {
     color: var(--warning);
 }
 
+.direction-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.direction-btn:active {
+    background: var(--primary);
+    color: white;
+}
+
 /* Recipe Card */
 .recipe-card {
     background: var(--card-bg);
@@ -309,7 +329,7 @@ body {
     text-decoration: none;
     color: var(--text-muted);
     gap: 4px;
-    width: 33%;
+    width: 20%;
     transition: color 0.3s;
 }
 
