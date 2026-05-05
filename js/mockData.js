@@ -1,3 +1,9 @@
+const MOCK_DEALS = [
+    { id: 1, title: "A101 - Wefood Glutensiz Un", discount: "%50 İndirim", market: "A101", isPremium: false, icon: "ph-storefront" },
+    { id: 2, title: "Migros - Schär Ekmek", discount: "1 Alana 1 Bedava", market: "Migros", isPremium: true, icon: "ph-shopping-cart" },
+    { id: 3, title: "BİM - Karabuğday Patlağı", discount: "Stoklara Girdi (19.90 TL)", market: "BİM", isPremium: true, icon: "ph-tag" }
+];
+
 const MOCK_PRODUCTS = [
     {
         id: 1,

@@ -30,6 +30,9 @@ const app = {
         // Render dynamic places
         this.renderPlaces();
         
+        // Render Deals (FOMO)
+        this.renderDeals();
+        
         // Render dynamic recipes
         this.renderRecipes();
         
@@ -38,6 +41,9 @@ const app = {
         
         // Render symptom logs
         this.renderSymptomLogs();
+
+        // Update Streak UI
+        this.updateStreakUI();
     },
 
     finishOnboarding(profileType) {
@@ -76,8 +82,11 @@ const app = {
             if(place.safetyScore < 80 && place.safetyScore >= 60) scoreColor = 'var(--warning)';
             if(place.safetyScore < 60) scoreColor = 'var(--danger)';
 
+            let sponsoredTag = index === 0 ? `<div style="background: var(--warning); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; position: absolute; top: 10px; left: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">Sponsorlu</div>` : '';
+
             const html = `
-                <div class="place-card">
+                <div class="place-card" style="position: relative;">
+                    ${sponsoredTag}
                     <div class="place-img" style="background-image: url('${placeImg}'); background-size: cover; background-position: center;"></div>
                     <div class="place-info">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -96,6 +105,42 @@ const app = {
                             </button>
                         </div>
                     </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+    },
+
+    renderDeals() {
+        const container = document.getElementById('deals-container');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        MOCK_DEALS.forEach(deal => {
+            let contentHtml = '';
+            let clickAction = '';
+            
+            if (deal.isPremium) {
+                clickAction = `onclick="app.showPremiumModal()"`;
+                contentHtml = `
+                    <div style="position: absolute; inset: 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-md);">
+                        <i class="ph ph-lock-key" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 5px;"></i>
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--text-main); background: white; padding: 2px 8px; border-radius: 10px; box-shadow: var(--shadow-sm);">Premium Özel</span>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="deal-card" ${clickAction} style="min-width: 200px; scroll-snap-align: start; background: var(--card-bg); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 15px; position: relative; cursor: pointer; border: 1px solid var(--border-color);">
+                    ${contentHtml}
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <div style="width: 30px; height: 30px; background: var(--primary-light); color: var(--primary-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ${deal.icon}"></i>
+                        </div>
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--text-muted);">${deal.market}</span>
+                    </div>
+                    <h4 style="font-size: 0.95rem; margin-bottom: 5px; line-height: 1.3;">${deal.title}</h4>
+                    <p style="color: var(--danger); font-weight: 800; font-size: 1.1rem;">${deal.discount}</p>
                 </div>
             `;
             container.innerHTML += html;
@@ -230,9 +275,29 @@ const app = {
             console.warn('LocalStorage error:', e);
         }
         
-        const today = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const todayDateOnly = now.toDateString();
         
-        logs.unshift({ date: today, status, color });
+        // Streak Logic
+        let streak = parseInt(localStorage.getItem('gs_streak') || '0');
+        let lastLogDateOnly = localStorage.getItem('gs_last_log_date');
+        
+        if (lastLogDateOnly !== todayDateOnly) {
+            // Check if last log was yesterday
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (lastLogDateOnly === yesterday.toDateString()) {
+                streak++; // sequential day
+            } else {
+                streak = 1; // broken or first time
+            }
+            localStorage.setItem('gs_streak', streak.toString());
+            localStorage.setItem('gs_last_log_date', todayDateOnly);
+            this.updateStreakUI();
+        }
+        
+        logs.unshift({ date: todayStr, status, color });
         if(logs.length > 10) logs.pop(); // keep last 10
         
         try {
@@ -244,6 +309,13 @@ const app = {
         if(status === 'Kaçak') {
             alert('⚠️ Gluten kaçağı raporladınız. Lütfen bol su için ve doktorunuzun tavsiyelerine uyun. Acil şifalar!');
         }
+    },
+
+    updateStreakUI() {
+        const streakEl = document.getElementById('streak-count');
+        if(!streakEl) return;
+        const streak = parseInt(localStorage.getItem('gs_streak') || '0');
+        streakEl.textContent = streak;
     },
 
     renderSymptomLogs() {
@@ -481,6 +553,20 @@ const app = {
         document.getElementById('scan-result').classList.add('hidden');
         // Restart scan
         scanner.simulateScan();
+    },
+
+    showPremiumModal() {
+        document.getElementById('premium-modal').classList.remove('hidden');
+    },
+
+    closePremiumModal() {
+        document.getElementById('premium-modal').classList.add('hidden');
+    },
+
+    subscribePremium() {
+        // Simüle edilmiş ödeme
+        alert("Iyzico/Stripe ödeme sayfasına yönlendiriliyorsunuz... (Simülasyon)");
+        this.closePremiumModal();
     }
 };
 
