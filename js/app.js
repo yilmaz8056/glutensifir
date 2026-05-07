@@ -22,11 +22,20 @@ const app = {
             document.getElementById('onboarding').style.display = 'flex';
         }
         
-        // Register Service Worker for PWA
+        // DİKKAT: Eski önbelleği (cache) temizlemek için Service Worker'ı siliyoruz.
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW Registered', reg))
-                .catch(err => console.error('SW Failed', err));
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Eski SW silindi (Cache temizliği)');
+                }
+                
+                // Bir kereliğine sayfayı zorla yenile (eski dosyaları RAM'den atmak için)
+                if (!localStorage.getItem('gs_cache_cleared_v4')) {
+                    localStorage.setItem('gs_cache_cleared_v4', 'true');
+                    window.location.reload(true);
+                }
+            });
         }
 
         // Try Loading Data from Firebase First
@@ -586,7 +595,7 @@ const app = {
     closeScannerResult() {
         document.getElementById('scan-result').classList.add('hidden');
         // Restart scan
-        if(window.scanner) window.scanner.simulateScan();
+        if(window.scanner) window.scanner.start();
     },
 
     showPremiumModal() {
