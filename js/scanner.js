@@ -33,6 +33,12 @@ class Scanner {
 
         } catch (err) {
             console.error("Kamera erişim hatası veya ZXing problemi:", err);
+            
+            // Kullanıcıya HTTPS uyarısı ver
+            if(window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                alert("Kamera Açılamadı!\n\nTarayıcılar güvenlik nedeniyle yerel ağda (HTTP) kameraya izin vermez. Gerçek barkod okuma için HTTPS bağlantısı veya Localhost gereklidir. Şimdilik simülasyon moduna geçiliyor.");
+            }
+
             // Fallback: Eğer kamera yoksa (Örn. masaüstü), 3 saniye sonra simüle et
             this.simulateScan();
         }

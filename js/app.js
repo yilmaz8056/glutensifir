@@ -1,4 +1,4 @@
-import dbService from './dbService.js';
+// app.js (Global Script)
 
 const app = {
     currentView: 'home',
@@ -48,7 +48,7 @@ const app = {
     async loadDataFromFirebase() {
         try {
             console.log("🔥 Firebase verileri kontrol ediliyor...");
-            const recipes = await dbService.getRecipes();
+            const recipes = await window.dbService.getRecipes();
             if (recipes && recipes.length > 0) {
                 window.MOCK_RECIPES = recipes;
                 console.log("✅ Tarifler Firebase'den yüklendi.");
@@ -56,17 +56,17 @@ const app = {
                 // Seed Firebase for the first time
                 console.log("ℹ️ Firebase'de tarif yok. Mock datalar yükleniyor...");
                 if(window.dbService && window.dbService.seedCollection && window.MOCK_RECIPES) {
-                    dbService.seedCollection("recipes", window.MOCK_RECIPES);
+                    window.dbService.seedCollection("recipes", window.MOCK_RECIPES);
                 }
             }
 
-            const places = await dbService.getPlaces();
+            const places = await window.dbService.getPlaces();
             if (places && places.length > 0) {
                 window.MOCK_PLACES = places;
                 console.log("✅ Mekanlar Firebase'den yüklendi.");
             }
 
-            const products = await dbService.getProducts();
+            const products = await window.dbService.getProducts();
             if (products && products.length > 0) {
                 window.MOCK_PRODUCTS = products;
                 console.log("✅ Ürünler Firebase'den yüklendi.");
@@ -612,4 +612,4 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
 
-export default app;
+// EOF

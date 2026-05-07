@@ -1,13 +1,10 @@
-import { db } from './firebaseConfig.js';
-import { collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-// Firestore Database Service
+// Firestore Database Service (Compat versiyonu için global)
 const dbService = {
   // === PLACES ===
   async getPlaces() {
     try {
-      if(!db) return [];
-      const querySnapshot = await getDocs(collection(db, "places"));
+      if(!window.firebaseDb) return [];
+      const querySnapshot = await window.firebaseDb.collection("places").get();
       const places = [];
       querySnapshot.forEach((doc) => {
         places.push({ id: doc.id, ...doc.data() });
@@ -22,8 +19,8 @@ const dbService = {
   // === RECIPES ===
   async getRecipes() {
     try {
-      if(!db) return [];
-      const querySnapshot = await getDocs(collection(db, "recipes"));
+      if(!window.firebaseDb) return [];
+      const querySnapshot = await window.firebaseDb.collection("recipes").get();
       const recipes = [];
       querySnapshot.forEach((doc) => {
         recipes.push({ id: doc.id, ...doc.data() });
@@ -38,8 +35,8 @@ const dbService = {
   // === PRODUCTS ===
   async getProducts() {
     try {
-      if(!db) return [];
-      const querySnapshot = await getDocs(collection(db, "products"));
+      if(!window.firebaseDb) return [];
+      const querySnapshot = await window.firebaseDb.collection("products").get();
       const products = [];
       querySnapshot.forEach((doc) => {
         products.push({ id: doc.id, ...doc.data() });
@@ -54,9 +51,10 @@ const dbService = {
   // === FAVORITES ===
   async getUserFavorites(userId) {
     try {
-      if(!db) return [];
-      const q = query(collection(db, "favorites"), where("user_id", "==", userId));
-      const querySnapshot = await getDocs(q);
+      if(!window.firebaseDb) return [];
+      const querySnapshot = await window.firebaseDb.collection("favorites")
+          .where("user_id", "==", userId)
+          .get();
       const favs = [];
       querySnapshot.forEach((doc) => {
         favs.push({ id: doc.id, ...doc.data() });
@@ -70,8 +68,8 @@ const dbService = {
 
   async addFavorite(userId, itemId, type) {
     try {
-      if(!db) return null;
-      const docRef = await addDoc(collection(db, "favorites"), {
+      if(!window.firebaseDb) return null;
+      const docRef = await window.firebaseDb.collection("favorites").add({
         user_id: userId,
         item_id: itemId,
         type: type, // 'place' or 'recipe'
@@ -86,12 +84,12 @@ const dbService = {
   
   // === SEEDING HELPERS (For Mock Data to Firebase) ===
   async seedCollection(collectionName, dataArray) {
-    if(!db) return;
+    if(!window.firebaseDb) return;
     try {
       for (const item of dataArray) {
         // use item.id as document id if possible
-        const itemId = item.id ? item.id.toString() : doc(collection(db, collectionName)).id;
-        await setDoc(doc(db, collectionName, itemId), item);
+        const itemId = item.id ? item.id.toString() : window.firebaseDb.collection(collectionName).doc().id;
+        await window.firebaseDb.collection(collectionName).doc(itemId).set(item);
       }
       console.log(`✅ Seeded ${collectionName} successfully.`);
     } catch (error) {
@@ -100,4 +98,4 @@ const dbService = {
   }
 };
 
-export default dbService;
+window.dbService = dbService;

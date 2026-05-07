@@ -1,7 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-
 // TODO: LÜTFEN KENDİ FIREBASE PROJE BİLGİLERİNİ BURAYA GİR
 const firebaseConfig = {
   apiKey: "SENIN_API_ANAHTARIN_BURAYA",
@@ -18,12 +14,16 @@ let db;
 let auth;
 
 try {
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
+  // Using Compat library, firebase is on window
+  app = firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  auth = firebase.auth();
   console.log("🔥 Firebase başarıyla başlatıldı!");
 } catch (error) {
   console.error("Firebase başlatma hatası (Konfigürasyonu kontrol et): ", error);
 }
 
-export { app, db, auth };
+// Global scope'a ekliyoruz (Compat versiyonu için)
+window.firebaseDb = db;
+window.firebaseAuth = auth;
+window.firebaseApp = app;
