@@ -9,13 +9,13 @@ const firebaseConfig = {
 };
 
 // Firebase'i Başlat
-let app;
+let firebaseAppInstance;
 let db;
 let auth;
 
 try {
   // Using Compat library, firebase is on window
-  app = firebase.initializeApp(firebaseConfig);
+  firebaseAppInstance = firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   auth = firebase.auth();
   console.log("🔥 Firebase başarıyla başlatıldı!");
@@ -26,4 +26,4 @@ try {
 // Global scope'a ekliyoruz (Compat versiyonu için)
 window.firebaseDb = db;
 window.firebaseAuth = auth;
-window.firebaseApp = app;
+window.firebaseApp = firebaseAppInstance;
