@@ -1,44 +1,77 @@
 class Scanner {
     constructor() {
         this.videoElement = document.getElementById('camera-stream');
-        this.stream = null;
+        this.codeReader = null;
         this.scanningTimer = null;
+        this.isPlaying = false;
     }
 
     async start() {
         try {
-            // Request camera access
-            this.stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
+            // Check if ZXing is loaded
+            if (!this.codeReader && window.ZXing) {
+                this.codeReader = new ZXing.BrowserMultiFormatReader();
+            }
+
+            if (!this.codeReader) {
+                throw new Error("ZXing library not loaded");
+            }
+
+            this.isPlaying = true;
+            console.log("Kamera başlatılıyor ve barkod aranıyor...");
+            
+            // Start decoding from the camera
+            this.codeReader.decodeFromVideoDevice(null, 'camera-stream', (result, err) => {
+                if (result && this.isPlaying) {
+                    this.isPlaying = false; // Prevent multiple reads
+                    this.handleScanResult(result.text);
+                }
+                if (err && !(err.name === 'NotFoundException')) {
+                    // Ignore NotFoundException, it just means no barcode in the current frame
+                }
             });
-            this.videoElement.srcObject = this.stream;
-            
-            // Simulate scanning process
-            this.simulateScan();
-            
+
         } catch (err) {
-            console.error("Camera access error:", err);
-            // Even if camera fails (e.g. on desktop without cam), simulate a scan after 2 seconds
+            console.error("Kamera erişim hatası veya ZXing problemi:", err);
+            // Fallback: Eğer kamera yoksa (Örn. masaüstü), 3 saniye sonra simüle et
             this.simulateScan();
         }
     }
 
     stop() {
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-            this.stream = null;
+        this.isPlaying = false;
+        if (this.codeReader) {
+            this.codeReader.reset(); // Stops the camera
         }
         if (this.scanningTimer) {
             clearTimeout(this.scanningTimer);
         }
     }
 
+    handleScanResult(barcode) {
+        this.playSuccessSound();
+        
+        // MOCK_PRODUCTS içinde barkodu ara
+        const product = window.MOCK_PRODUCTS.find(p => p.barcode === barcode);
+        
+        if (product) {
+            window.app.showScannerResult(product);
+        } else {
+            // Veritabanında yoksa genel bir uyarı göster
+            window.app.showScannerResult({
+                status: 'warning',
+                brand: 'Bilinmeyen Ürün',
+                name: 'Barkod: ' + barcode,
+                description: 'Bu ürün veritabanımızda bulunamadı. Lütfen içeriğini manuel olarak kontrol ediniz.'
+            });
+        }
+    }
+
     simulateScan() {
-        // Wait 3 seconds then "find" a product
+        // 3 saniye bekle, sonra rastgele bir ürün bul (simülasyon)
         this.scanningTimer = setTimeout(() => {
-            const product = getRandomMockProduct();
-            this.playSuccessSound();
-            app.showScannerResult(product);
+            const product = typeof window.getRandomMockProduct === 'function' ? window.getRandomMockProduct() : window.MOCK_PRODUCTS[0];
+            this.handleScanResult(product.barcode);
         }, 3000);
     }
 
@@ -63,9 +96,10 @@ class Scanner {
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.5);
         } catch(e) {
-            console.log("Audio not supported or blocked", e);
+            console.log("Ses çalınamadı", e);
         }
     }
 }
 
-const scanner = new Scanner();
+// Global scope'a ekleyelim ki HTML'deki onclick'ler veya app.js ulaşabilsin
+window.scanner = new Scanner();

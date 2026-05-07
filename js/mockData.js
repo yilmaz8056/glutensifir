@@ -29,8 +29,8 @@ window.MOCK_PRODUCTS = [
 
 // Helper to get random product for mock scanner
 function getRandomMockProduct() {
-    const randomIndex = Math.floor(Math.random() * MOCK_PRODUCTS.length);
-    return MOCK_PRODUCTS[randomIndex];
+    const randomIndex = Math.floor(Math.random() * window.MOCK_PRODUCTS.length);
+    return window.MOCK_PRODUCTS[randomIndex];
 }
 
 window.MOCK_PLACES = [
