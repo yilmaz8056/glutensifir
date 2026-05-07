@@ -1,13 +1,13 @@
-const CACHE_NAME = 'glutensifir-v5';
+const CACHE_NAME = 'glutensifir-v6';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/mockData.js',
-  './js/firebaseConfig.js?v=4',
-  './js/dbService.js?v=4',
-  './js/scanner.js?v=4',
-  './js/app.js?v=4',
+  './js/firebaseConfig.js',
+  './js/dbService.js',
+  './js/scanner.js',
+  './js/app.js',
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap',
   'https://unpkg.com/@phosphor-icons/web'
 ];
