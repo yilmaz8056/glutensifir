@@ -108,7 +108,7 @@ const app = {
 
         container.innerHTML = '';
         
-        MOCK_PLACES.forEach((place, index) => {
+        window.MOCK_PLACES.forEach((place, index) => {
             const placeImg = `https://image.pollinations.ai/prompt/${encodeURIComponent(place.name + ' cozy cafe interior gluten free restaurant realistic')}?width=400&height=300&nologo=true&seed=${place.id}`;
 
             // Güven Skoru rengi
@@ -150,7 +150,7 @@ const app = {
         if (!container) return;
         
         container.innerHTML = '';
-        MOCK_DEALS.forEach(deal => {
+        window.MOCK_DEALS.forEach(deal => {
             let contentHtml = '';
             let clickAction = '';
             
@@ -193,7 +193,7 @@ const app = {
 
         // Render All Recipes in Recipes View
         listContainer.innerHTML = '';
-        MOCK_RECIPES.forEach(recipe => {
+        window.MOCK_RECIPES.forEach(recipe => {
             const recipeImg = `https://image.pollinations.ai/prompt/${encodeURIComponent(recipe.name + ' turkish food plate delicious realistic')}?width=400&height=300&nologo=true`;
             listContainer.innerHTML += `
                 <div class="recipe-card" onclick="app.showRecipeDetail(${recipe.id})">
@@ -222,13 +222,13 @@ const app = {
         if (!dailyContainer) return;
 
         // Kategorilere göre filtrele
-        const breakfasts = MOCK_RECIPES.filter(r => r.category === 'kahvaltı');
-        const mains = MOCK_RECIPES.filter(r => r.category === 'ana_yemek');
+        const breakfasts = window.MOCK_RECIPES.filter(r => r.category === 'kahvaltı');
+        const mains = window.MOCK_RECIPES.filter(r => r.category === 'ana_yemek');
 
         // Rastgele seç
-        const breakfast = breakfasts[Math.floor(Math.random() * breakfasts.length)] || MOCK_RECIPES[0];
-        const lunch = mains[Math.floor(Math.random() * mains.length)] || MOCK_RECIPES[1];
-        let dinner = mains[Math.floor(Math.random() * mains.length)] || MOCK_RECIPES[2];
+        const breakfast = breakfasts[Math.floor(Math.random() * breakfasts.length)] || window.MOCK_RECIPES[0];
+        const lunch = mains[Math.floor(Math.random() * mains.length)] || window.MOCK_RECIPES[1];
+        let dinner = mains[Math.floor(Math.random() * mains.length)] || window.MOCK_RECIPES[2];
         
         // Öğle ve akşam aynı olmasın diye basit kontrol
         while(dinner.id === lunch.id && mains.length > 1) {
@@ -256,7 +256,7 @@ const app = {
 
     rateVenue(id) {
         // MVP: Simple simulated modal using alert/prompt or custom UI
-        const venue = MOCK_PLACES.find(p => p.id === id);
+        const venue = window.MOCK_PLACES.find(p => p.id === id);
         if(!venue) return;
         
         const score = prompt(`"${venue.name}" mekanını değerlendirin:\n1 - Kesinlikle Güvenli\n2 - Aynı Yağda Kızartılıyor (Çapraz Bulaşma Riski)\n3 - Glutensiz Değil`, "1");
@@ -274,7 +274,7 @@ const app = {
             return;
         }
 
-        // Add to MOCK_PLACES for simulation
+        // Add to window.MOCK_PLACES for simulation
         const newPlace = {
             id: Date.now(),
             name: name,
@@ -286,7 +286,7 @@ const app = {
             lat: 40.9840 + (Math.random() * 0.02 - 0.01), // random offset around Kadıköy
             lng: 29.0250 + (Math.random() * 0.02 - 0.01)
         };
-        MOCK_PLACES.unshift(newPlace); // add to top
+        window.MOCK_PLACES.unshift(newPlace); // add to top
 
         alert(`"${name}" başarıyla önerildi. Teşekkürler! (+20 Dedektif Puanı)`);
         document.getElementById('add-venue-modal').classList.add('hidden');
@@ -377,7 +377,7 @@ const app = {
     },
 
     showRecipeDetail(id) {
-        const recipe = MOCK_RECIPES.find(r => r.id === id);
+        const recipe = window.MOCK_RECIPES.find(r => r.id === id);
         if(!recipe) return;
 
         const recipeImg = `https://image.pollinations.ai/prompt/${encodeURIComponent(recipe.name + ' turkish food plate delicious realistic')}?width=400&height=300&nologo=true`;
@@ -497,9 +497,9 @@ const app = {
 
         // Handle Scanner state
         if (viewName === 'scanner') {
-            scanner.start();
+            if(window.scanner) window.scanner.start();
         } else {
-            scanner.stop();
+            if(window.scanner) window.scanner.stop();
         }
 
         // Handle Map state
@@ -525,7 +525,7 @@ const app = {
         }).addTo(this.mapInstance);
 
         // Add markers
-        MOCK_PLACES.forEach(place => {
+        window.MOCK_PLACES.forEach(place => {
             const markerColor = place.safety === 'safe' ? 'green' : 'orange';
             
             // Custom simple icon logic using divIcon
@@ -586,7 +586,7 @@ const app = {
     closeScannerResult() {
         document.getElementById('scan-result').classList.add('hidden');
         // Restart scan
-        scanner.simulateScan();
+        if(window.scanner) window.scanner.simulateScan();
     },
 
     showPremiumModal() {
