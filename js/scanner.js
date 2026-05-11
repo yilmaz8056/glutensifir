@@ -8,6 +8,12 @@ class Scanner {
 
     async start() {
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn("Camera API not available (likely due to HTTP/file protocol). Falling back to image upload.");
+                this.showFallbackUploader();
+                return;
+            }
+
             // Check if ZXing is loaded
             if (!this.codeReader && window.ZXing) {
                 this.codeReader = new ZXing.BrowserMultiFormatReader();
@@ -27,7 +33,11 @@ class Scanner {
                     this.handleScanResult(result.text);
                 }
                 if (err && !(err.name === 'NotFoundException')) {
-                    // Ignore NotFoundException, it just means no barcode in the current frame
+                    // Kamera izni reddedilince NotAllowedError, kamera bulunamayınca NotFoundError dönebilir.
+                    // Ayrıca HTTP protokolü nedeniyle diğer hatalar da olabilir.
+                    console.warn("Kamera okuma hatası:", err);
+                    this.stop();
+                    this.showFallbackUploader();
                 }
             });
 
