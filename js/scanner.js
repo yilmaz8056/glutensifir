@@ -39,8 +39,8 @@ class Scanner {
                 alert("Kamera Açılamadı!\n\nTarayıcılar güvenlik nedeniyle yerel ağda (HTTP) kameraya izin vermez. Gerçek barkod okuma için HTTPS bağlantısı veya Localhost gereklidir. Şimdilik simülasyon moduna geçiliyor.");
             }
 
-            // Fallback: Eğer kamera yoksa (Örn. masaüstü), 3 saniye sonra simüle et
-            this.simulateScan();
+            // Fallback: Eğer kamera yoksa veya izin verilmediyse Fotoğraf Yükleme UI'ını aç
+            this.showFallbackUploader();
         }
     }
 
@@ -70,12 +70,32 @@ class Scanner {
         }
     }
 
-    simulateScan() {
-        // 3 saniye bekle, sonra rastgele bir ürün bul (simülasyon)
-        this.scanningTimer = setTimeout(() => {
-            const product = typeof window.getRandomMockProduct === 'function' ? window.getRandomMockProduct() : window.MOCK_PRODUCTS[0];
-            this.handleScanResult(product.barcode);
-        }, 3000);
+    showFallbackUploader() {
+        document.getElementById('scanner-overlay').classList.add('hidden');
+        document.getElementById('camera-stream').classList.add('hidden');
+        document.getElementById('scanner-fallback').classList.remove('hidden');
+    }
+
+    async decodeFromFile(inputElement) {
+        if (!inputElement || !inputElement.files || !inputElement.files[0]) return;
+        
+        try {
+            if (!this.codeReader && window.ZXing) {
+                this.codeReader = new ZXing.BrowserMultiFormatReader();
+            }
+
+            // Resmi oku ve barkodu çöz
+            const result = await this.codeReader.decodeFromImageUrl(URL.createObjectURL(inputElement.files[0]));
+            if (result && result.text) {
+                this.handleScanResult(result.text);
+            }
+        } catch (err) {
+            console.error("Fotoğraftan barkod okunamadı:", err);
+            alert("Barkod net okunamadı. Lütfen fotoğrafın net olduğundan emin olup tekrar deneyin.");
+        }
+        
+        // Inputu temizle ki aynı dosyayı tekrar seçebilsin
+        inputElement.value = '';
     }
 
     playSuccessSound() {

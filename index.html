@@ -107,11 +107,21 @@
         <!-- Scanner View -->
         <div id="view-scanner" class="view hidden-view">
             <div class="camera-container" id="camera-container">
-                <div class="scanner-overlay">
+                <div class="scanner-overlay" id="scanner-overlay">
                     <div class="scan-area"></div>
                     <p class="scan-text">Barkodu alana yerleştirin</p>
                 </div>
                 <video id="camera-stream" autoplay playsinline></video>
+                
+                <div id="scanner-fallback" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; z-index: 10;">
+                    <i class="ph ph-camera-slash" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 15px;"></i>
+                    <h3 style="margin-bottom: 10px;">Kameraya Erişilemiyor</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Güvenlik nedeniyle kamera açılamadı. Barkod okutmak için galerinizden veya kameradan bir fotoğraf seçebilirsiniz.</p>
+                    <label for="scanner-file-upload" class="btn-primary" style="display: inline-block; cursor: pointer; padding: 12px 20px;">
+                        <i class="ph ph-upload-simple"></i> Barkod Fotoğrafı Seç
+                    </label>
+                    <input type="file" id="scanner-file-upload" accept="image/*" capture="environment" style="display: none;" onchange="if(window.scanner) window.scanner.decodeFromFile(this)">
+                </div>
             </div>
 
             <!-- Result Overlay -->
@@ -205,6 +215,17 @@
                     <!-- Logs will appear here -->
                 </div>
             </div>
+
+            <!-- Settings / Gemini API -->
+            <div class="section-title" style="margin-top: 30px;">
+                <h3>Ayarlar & AI Entegrasyonu</h3>
+            </div>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Gerçek AI analizleri için Google Gemini API anahtarınızı girin.</p>
+                <input type="password" id="gemini-api-key" placeholder="AIzaSy..." style="width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit;">
+                <button class="btn-primary" onclick="app.saveGeminiKey()" style="width: 100%; padding: 10px;">API Anahtarını Kaydet</button>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; text-align: center;"><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary);">Ücretsiz API Anahtarı Al</a></p>
+            </div>
         </div>
 
         <!-- Premium Modal -->
@@ -260,10 +281,12 @@
                 
                 <div id="ai-analysis-step-1">
                     <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Ürünün arka tarafındaki <b>İçindekiler</b> bölümünün fotoğrafını çekin veya okutun.</p>
-                    <div style="width: 100%; height: 150px; background: #F3F4F6; border: 2px dashed var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 15px;" onclick="app.startAIAnalysis()">
+                    
+                    <label for="ai-image-upload" style="width: 100%; height: 150px; background: #F3F4F6; border: 2px dashed var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 15px; text-align: center;">
                         <i class="ph ph-camera" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 10px;"></i>
-                        <span style="font-size: 0.9rem; font-weight: bold; color: var(--text-muted);">İçindekileri Çek</span>
-                    </div>
+                        <span style="font-size: 0.9rem; font-weight: bold; color: var(--text-muted);">İçindekileri Çek veya Yükle</span>
+                        <input type="file" id="ai-image-upload" accept="image/*" capture="environment" style="display: none;" onchange="app.startAIAnalysis(this)">
+                    </label>
                 </div>
 
                 <div id="ai-analysis-step-2" class="hidden" style="flex: 1; overflow-y: auto;">

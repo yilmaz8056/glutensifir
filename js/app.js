@@ -50,6 +50,22 @@ const app = {
         // Render symptom logs
         this.renderSymptomLogs();
 
+        // Load custom products from localStorage
+        const customProductsJson = localStorage.getItem('gs_custom_products');
+        if (customProductsJson) {
+            try {
+                const customProducts = JSON.parse(customProductsJson);
+                window.MOCK_PRODUCTS = [...window.MOCK_PRODUCTS, ...customProducts];
+            } catch (e) {
+                console.error("Özel ürünler yüklenirken hata:", e);
+            }
+        }
+
+        // Request Notification Permission
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
         // Update Streak UI
         this.updateStreakUI();
 
@@ -646,6 +662,15 @@ const app = {
         };
         
         window.MOCK_PRODUCTS.push(newProduct);
+        
+        // LocalStorage'a kaydet
+        let customProducts = [];
+        try {
+            customProducts = JSON.parse(localStorage.getItem('gs_custom_products')) || [];
+        } catch(e){}
+        customProducts.push(newProduct);
+        localStorage.setItem('gs_custom_products', JSON.stringify(customProducts));
+
         document.getElementById('add-product-modal').classList.add('hidden');
         
         // Bildirim göster
@@ -655,36 +680,83 @@ const app = {
         if(window.scanner) window.scanner.start();
     },
 
-    // AI Analizi Başlatma
-    startAIAnalysis() {
+    // Gemini API Anahtarı Kaydetme
+    saveGeminiKey() {
+        const key = document.getElementById('gemini-api-key').value;
+        if(key) {
+            localStorage.setItem('gs_gemini_key', key);
+            alert('Gemini API Anahtarı başarıyla kaydedildi!');
+        } else {
+            alert('Lütfen geçerli bir anahtar girin.');
+        }
+    },
+
+    // AI Analizi Başlatma (Gerçek Gemini Entegrasyonu)
+    async startAIAnalysis(inputElement) {
+        if (!inputElement || !inputElement.files || !inputElement.files[0]) return;
+        
+        const apiKey = localStorage.getItem('gs_gemini_key');
+        if(!apiKey) {
+            alert('Lütfen Profil > Ayarlar kısmından Gemini API Anahtarınızı girin.');
+            return;
+        }
+
+        const file = inputElement.files[0];
+        
         document.getElementById('ai-analysis-step-1').classList.add('hidden');
         document.getElementById('ai-analysis-step-2').classList.remove('hidden');
         
         const resultContent = document.getElementById('ai-result-content');
         resultContent.innerHTML = '<span class="typing-cursor"></span>';
-        
-        // Simüle edilmiş AI analizi
-        setTimeout(() => {
+        document.getElementById('ai-typing-indicator').classList.remove('hidden');
+
+        try {
+            // Read file as Base64
+            const base64Image = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            // Call Gemini API
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Sen bir uzman diyetisyen ve çölyak hastalığı uzmanısın. Eklediğim resimdeki ürün etiketini ve içindekiler listesini oku. Ürünün çölyak hastaları için güvenli olup olmadığını, çapraz bulaşma riski veya gluten (buğday, arpa, çavdar, yulaf, malt, modifiye nişasta vb.) içerip içermediğini analiz et. Lütfen sonucu Türkçe, net ve kısa paragraflar halinde yaz. En sonunda mutlaka 'AI Sonucu: <strong style=\"color: var(--primary);\">GÜVENLİ</strong>', 'AI Sonucu: <strong style=\"color: var(--warning);\">DİKKAT</strong>' veya 'AI Sonucu: <strong style=\"color: var(--danger);\">RİSKLİ</strong>' şeklinde HTML formatında tek bir satır ekle." },
+                            { inline_data: { mime_type: file.type, data: base64Image } }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if(data.error) throw new Error(data.error.message);
+
+            const analysisText = data.candidates[0].content.parts[0].text;
+            
             document.getElementById('ai-typing-indicator').classList.add('hidden');
             
-            const analysisText = "İçindekiler incelendi...\n\nSüt tozu, peynir altı suyu tozu, emülgatörler tespit edildi. Herhangi bir gluten kaynağına (buğday, arpa, çavdar) rastlanmadı.\n\nAI Sonucu: <strong style='color: var(--primary);'>GÜVENLİ</strong>";
-            
             this.typeWriterEffect(analysisText, resultContent, () => {
-                // Analiz bitince yorumları göster
                 document.getElementById('ai-reviews-section').classList.remove('hidden');
-                
-                const reviewsList = document.getElementById('ai-reviews-list');
-                reviewsList.innerHTML = `
+                document.getElementById('ai-reviews-list').innerHTML = `
                     <div style="background: var(--bg-color); padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem;">
-                        <strong style="color: var(--primary-dark);">@ayse_colyak:</strong> "Sürekli tüketiyorum, kan değerlerimi bozmadı."
-                    </div>
-                    <div style="background: var(--bg-color); padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem;">
-                        <strong style="color: var(--primary-dark);">@glutensizyasam:</strong> "Üretim bandı değişmiş diyorlar ama ben sorun yaşamadım."
+                        <strong style="color: var(--primary-dark);">@sistem:</strong> "Bu ürün analiz edildi. Yapay zeka tavsiyesidir, doktor tavsiyesi değildir."
                     </div>
                 `;
             });
+
+        } catch(e) {
+            document.getElementById('ai-typing-indicator').classList.add('hidden');
+            resultContent.innerHTML = `<span style="color:var(--danger);">Analiz hatası: ${e.message}</span>`;
             
-        }, 2000);
+            // Eğer key geçersizse veya kota dolduysa geri dönme butonu
+            resultContent.innerHTML += `<br><button class="btn-outline" onclick="document.getElementById('ai-analysis-step-2').classList.add('hidden'); document.getElementById('ai-analysis-step-1').classList.remove('hidden');" style="margin-top: 10px; padding: 5px 10px;">Tekrar Dene</button>`;
+        }
     },
 
     typeWriterEffect(text, element, callback) {
@@ -716,23 +788,30 @@ const app = {
         type();
     },
 
-    // Akıllı Bildirim Sistemi (Push Notification Simülasyonu)
+    // Akıllı Bildirim Sistemi (Push Notification Simülasyonu -> Gerçek Notification)
     triggerNotification(text, icon = 'ph-bell-ringing') {
+        // 1. Toast UI Bildirimi
         const toast = document.getElementById('notification-toast');
         const iconEl = document.getElementById('notification-icon');
         const textEl = document.getElementById('notification-text');
         
-        if(!toast) return;
-        
-        iconEl.className = `ph ${icon}`;
-        textEl.innerText = text;
-        
-        toast.classList.remove('notification-hidden');
-        
-        // 4 saniye sonra gizle
-        setTimeout(() => {
-            toast.classList.add('notification-hidden');
-        }, 4000);
+        if(toast) {
+            iconEl.className = `ph ${icon}`;
+            textEl.innerText = text;
+            toast.classList.remove('notification-hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('notification-hidden');
+            }, 4000);
+        }
+
+        // 2. İşletim Sistemi Native Bildirimi
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("GlutenSıfır", {
+                body: text,
+                icon: "assets/icon-192x192.png" // Varsa
+            });
+        }
     }
 };
 
