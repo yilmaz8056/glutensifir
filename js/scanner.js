@@ -63,13 +63,10 @@ class Scanner {
         if (product) {
             window.app.showScannerResult(product);
         } else {
-            // Veritabanında yoksa genel bir uyarı göster
-            window.app.showScannerResult({
-                status: 'warning',
-                brand: 'Bilinmeyen Ürün',
-                name: 'Barkod: ' + barcode,
-                description: 'Bu ürün veritabanımızda bulunamadı. Lütfen içeriğini manuel olarak kontrol ediniz.'
-            });
+            // Veritabanında yoksa "Ürün Ekle" ekranını aç
+            this.stop(); // Taramayı durdur
+            document.getElementById('add-product-modal').classList.remove('hidden');
+            window.currentUnknownBarcode = barcode; // Kaydetmek için geçici olarak tut
         }
     }
 

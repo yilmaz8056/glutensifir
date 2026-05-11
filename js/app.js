@@ -52,6 +52,11 @@ const app = {
 
         // Update Streak UI
         this.updateStreakUI();
+
+        // Simüle edilmiş Push Notification (Uygulama açıldıktan 5 saniye sonra)
+        setTimeout(() => {
+            this.triggerNotification("Yakınında %100 Glutensiz 'Guru Moda' bulundu! 📍", "ph-map-pin");
+        }, 5000);
     },
 
     async loadDataFromFirebase() {
@@ -138,7 +143,8 @@ const app = {
                                 %${place.safetyScore} Güvenli
                             </span>
                         </div>
-                        <p><i class="ph ${place.icon}"></i> ${place.rating} (${place.type})</p>
+                        <p style="margin-bottom: 5px;"><i class="ph ${place.icon}"></i> ${place.rating} (${place.type})</p>
+                        ${place.safetyScore >= 80 ? '<div style="margin-bottom: 5px;"><span class="verified-badge"><i class="ph ph-check-circle"></i> Çölyaklı kullanıcılar doğruladı</span></div>' : ''}
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" target="_blank" class="direction-btn" style="flex: 1; text-align: center;">
                                 <i class="ph ph-navigation-arrow"></i> Yol Tarifi
@@ -576,7 +582,12 @@ const app = {
             title.textContent = 'Dikkat';
         }
 
-        desc.innerHTML = `<strong>${product.brand} - ${product.name}</strong><br><br>${product.description}`;
+        desc.innerHTML = `<strong>${product.brand} - ${product.name}</strong><br><br>${product.description}
+        <div style="margin-top: 15px;">
+            <button class="btn-outline" onclick="document.getElementById('ai-analysis-modal').classList.remove('hidden'); document.getElementById('scan-result').classList.add('hidden');" style="width: 100%; border-color: var(--primary); color: var(--primary); font-weight: bold;">
+                <i class="ph ph-magic-wand"></i> İçeriği AI ile Analiz Et
+            </button>
+        </div>`;
         
         // Gamification message
         const gamificationMsg = document.createElement('div');
@@ -610,6 +621,118 @@ const app = {
         // Simüle edilmiş ödeme
         alert("Iyzico/Stripe ödeme sayfasına yönlendiriliyorsunuz... (Simülasyon)");
         this.closePremiumModal();
+    },
+
+    // Yeni Ürün Ekleme (Bilinmeyen barkod okutulduğunda)
+    submitNewProduct() {
+        const name = document.getElementById('new-product-name').value;
+        const brand = document.getElementById('new-product-brand').value;
+        const ingredients = document.getElementById('new-product-ingredients').value;
+        
+        if(!name || !brand) {
+            alert('Lütfen ürün adını ve markasını girin.');
+            return;
+        }
+
+        // Sahte bir ürün objesi oluştur ve MOCK listesine ekle
+        const newProduct = {
+            id: Date.now(),
+            name: name,
+            brand: brand,
+            category: "diğer",
+            status: "warning", // Analiz edilene kadar dikkat diyelim
+            barcode: window.currentUnknownBarcode || "00000",
+            description: ingredients ? `İçindekiler: ${ingredients}` : "Topluluk tarafından eklendi."
+        };
+        
+        window.MOCK_PRODUCTS.push(newProduct);
+        document.getElementById('add-product-modal').classList.add('hidden');
+        
+        // Bildirim göster
+        this.triggerNotification(`Yeni ürün eklendi: ${brand} ${name}`);
+        
+        // Tarayıcıyı tekrar başlat
+        if(window.scanner) window.scanner.start();
+    },
+
+    // AI Analizi Başlatma
+    startAIAnalysis() {
+        document.getElementById('ai-analysis-step-1').classList.add('hidden');
+        document.getElementById('ai-analysis-step-2').classList.remove('hidden');
+        
+        const resultContent = document.getElementById('ai-result-content');
+        resultContent.innerHTML = '<span class="typing-cursor"></span>';
+        
+        // Simüle edilmiş AI analizi
+        setTimeout(() => {
+            document.getElementById('ai-typing-indicator').classList.add('hidden');
+            
+            const analysisText = "İçindekiler incelendi...\n\nSüt tozu, peynir altı suyu tozu, emülgatörler tespit edildi. Herhangi bir gluten kaynağına (buğday, arpa, çavdar) rastlanmadı.\n\nAI Sonucu: <strong style='color: var(--primary);'>GÜVENLİ</strong>";
+            
+            this.typeWriterEffect(analysisText, resultContent, () => {
+                // Analiz bitince yorumları göster
+                document.getElementById('ai-reviews-section').classList.remove('hidden');
+                
+                const reviewsList = document.getElementById('ai-reviews-list');
+                reviewsList.innerHTML = `
+                    <div style="background: var(--bg-color); padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem;">
+                        <strong style="color: var(--primary-dark);">@ayse_colyak:</strong> "Sürekli tüketiyorum, kan değerlerimi bozmadı."
+                    </div>
+                    <div style="background: var(--bg-color); padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem;">
+                        <strong style="color: var(--primary-dark);">@glutensizyasam:</strong> "Üretim bandı değişmiş diyorlar ama ben sorun yaşamadım."
+                    </div>
+                `;
+            });
+            
+        }, 2000);
+    },
+
+    typeWriterEffect(text, element, callback) {
+        let i = 0;
+        element.innerHTML = '';
+        const speed = 30; // ms per char
+        
+        function type() {
+            if (i < text.length) {
+                if(text.charAt(i) === '<') {
+                    // HTML tag'ını hızlıca atla
+                    let tag = '';
+                    while(text.charAt(i) !== '>' && i < text.length) {
+                        tag += text.charAt(i);
+                        i++;
+                    }
+                    tag += '>';
+                    element.innerHTML += tag;
+                    i++;
+                } else {
+                    element.innerHTML += text.charAt(i) === '\n' ? '<br>' : text.charAt(i);
+                    i++;
+                }
+                setTimeout(type, speed);
+            } else {
+                if(callback) callback();
+            }
+        }
+        type();
+    },
+
+    // Akıllı Bildirim Sistemi (Push Notification Simülasyonu)
+    triggerNotification(text, icon = 'ph-bell-ringing') {
+        const toast = document.getElementById('notification-toast');
+        const iconEl = document.getElementById('notification-icon');
+        const textEl = document.getElementById('notification-text');
+        
+        if(!toast) return;
+        
+        iconEl.className = `ph ${icon}`;
+        textEl.innerText = text;
+        
+        toast.classList.remove('notification-hidden');
+        
+        // 4 saniye sonra gizle
+        setTimeout(() => {
+            toast.classList.add('notification-hidden');
+        }, 4000);
     }
 };
 
